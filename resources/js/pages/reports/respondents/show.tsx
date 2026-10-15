@@ -17,11 +17,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { index as reportsRoute } from '@/routes/reports';
 import { index as respondentsRoute } from '@/routes/reports/respondents';
 import { download as downloadRoute } from '@/routes/reports/attachments';
-import type { ReportAnswer, ReportSection, SurveyResponse } from '@/types';
+import type {
+    Readiness,
+    ReportAnswer,
+    ReportSection,
+    SurveyResponse,
+} from '@/types';
 
 type Props = {
     response: SurveyResponse;
     sections: ReportSection[];
+    readiness: Readiness;
 };
 
 function formatDate(value: string): string {
@@ -91,7 +97,11 @@ function AnswerCard({ question }: { question: ReportAnswer }) {
     );
 }
 
-export default function RespondentShow({ response, sections }: Props) {
+export default function RespondentShow({
+    response,
+    sections,
+    readiness,
+}: Props) {
     const attachments = response.attachments ?? [];
     const questionCount = sections.reduce(
         (total, section) => total + section.questions.length,
@@ -128,6 +138,19 @@ export default function RespondentShow({ response, sections }: Props) {
                                 {attachments.length} file
                                 {attachments.length === 1 ? '' : 's'}
                             </span>
+                        </span>
+                        <span
+                            title={`${readiness.answered}/${readiness.total_answers} answers · ${readiness.documents}/${readiness.total_documents} required documents`}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${
+                                readiness.score >= 90
+                                    ? 'bg-emerald-500/10 text-emerald-600 ring-emerald-500/30'
+                                    : readiness.score >= 70
+                                      ? 'bg-amber-500/10 text-amber-600 ring-amber-500/30'
+                                      : 'bg-red-500/10 text-red-600 ring-red-500/30'
+                            }`}
+                        >
+                            <ClipboardCheck className="size-3" />
+                            <span>Readiness {readiness.score}%</span>
                         </span>
                     </div>
                 </div>

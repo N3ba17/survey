@@ -7,6 +7,7 @@ use App\Models\SurveyArea;
 use App\Models\SurveyAttachment;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use App\Support\Readiness;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -87,6 +88,7 @@ class ReportController extends Controller
         return Inertia::render('reports/respondents/show', [
             'response' => $response->load('attachments'),
             'sections' => $sections,
+            'readiness' => Readiness::for($response, SurveyQuestion::query()->active()->get()),
         ]);
     }
 

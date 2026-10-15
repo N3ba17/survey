@@ -109,3 +109,63 @@ export type Paginator<T> = {
     to?: number;
     total: number;
 };
+
+export type Readiness = {
+    score: number;
+    answered: number;
+    total_answers: number;
+    documents: number;
+    total_documents: number;
+};
+
+export type BreakdownSlice = {
+    label: string;
+    count: number;
+    percent: number;
+};
+
+export type ExperienceProfile = {
+    average: number | null;
+    answered: number;
+    buckets: { label: string; count: number }[];
+};
+
+export type ActivityPoint = {
+    week: string;
+    label: string;
+    count: number;
+};
+
+export type ComplianceQuestion = {
+    id: number;
+    label: string;
+    attached: number;
+    total: number;
+    percent: number;
+};
+
+export type AttentionItem = {
+    id: number;
+    company_name: string;
+    readiness: Readiness;
+    submitted_at: string;
+};
+
+export type DashboardData = {
+    kpis: {
+        respondents: number;
+        thisWeek: number;
+        compliancePercent: number;
+        averageYears: number | null;
+    };
+    companyTypes: BreakdownSlice[];
+    countries: BreakdownSlice[];
+    experience: ExperienceProfile;
+    activity: ActivityPoint[];
+    compliance: {
+        readyCount: number;
+        questions: ComplianceQuestion[];
+    };
+    insights: string[];
+    attention: AttentionItem[];
+};
