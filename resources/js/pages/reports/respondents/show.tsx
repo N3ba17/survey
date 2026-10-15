@@ -198,7 +198,12 @@ export default function RespondentShow({
                             )}
                             {response.website && (
                                 <a
-                                    href={response.website}
+                                    href={
+                                        response.website.startsWith('http://') ||
+                                        response.website.startsWith('https://')
+                                            ? response.website
+                                            : `https://${response.website}`
+                                    }
                                     target="_blank"
                                     rel="noreferrer"
                                     className="rounded-full bg-[#00515f]/10 px-2.5 py-1 text-[#00515f] ring-1 ring-[#00515f]/20 hover:bg-[#00515f]/20"

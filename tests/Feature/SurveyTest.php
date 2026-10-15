@@ -181,6 +181,27 @@ test('a valid submission is stored with answers and documents', function () {
     Storage::disk('local')->assertExists($attachment->path);
 });
 
+test('a bare website without a scheme is accepted and stored trimmed', function () {
+    Storage::fake('local');
+
+    $this->post(route('survey.store'), surveyPayload(['website' => ' example.com ']))
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('survey.show'))
+        ->assertInertiaFlash('submitted', true);
+
+    expect(SurveyResponse::sole()->website)->toBe('example.com');
+});
+
+test('the website may be left empty', function () {
+    Storage::fake('local');
+
+    $this->post(route('survey.store'), surveyPayload(['website' => '']))
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('survey.show'));
+
+    expect(SurveyResponse::sole()->website)->toBeNull();
+});
+
 test('a file larger than 10MB is rejected', function () {
     $question = SurveyQuestion::query()
         ->where('attachment_requirement', 'required')

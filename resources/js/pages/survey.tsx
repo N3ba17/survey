@@ -229,13 +229,6 @@ export default function Survey({ survey, areas, uploads }: Props) {
             found.country = 'Country of origin is required';
         }
 
-        if (
-            data.website.trim() &&
-            !/^https?:\/\/[^\s.]+\.[^\s]{2,}$/.test(data.website.trim())
-        ) {
-            found.website = 'Please enter a valid URL (https://…)';
-        }
-
         for (const area of areas) {
             for (const question of area.questions) {
                 const key = `answers.${question.id}`;
@@ -867,7 +860,7 @@ export default function Survey({ survey, areas, uploads }: Props) {
                                             <TextField
                                                 id="website"
                                                 label="Company Website"
-                                                placeholder="https://example.com"
+                                                placeholder="example.com"
                                                 value={form.data.website}
                                                 isValid={isFieldValid('website')}
                                                 onChange={(value) =>

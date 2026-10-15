@@ -18,6 +18,17 @@ class StoreSurveyRequest extends FormRequest
     }
 
     /**
+     * Trim surrounding whitespace so " example.com " is stored as
+     * "example.com" without any scheme being forced on the respondent.
+     */
+    public function prepareForValidation(): void
+    {
+        if (is_string($this->input('website'))) {
+            $this->merge(['website' => trim($this->input('website'))]);
+        }
+    }
+
+    /**
      * Rules are derived from the seeded questions so the form, its
      * validation and the report views can never drift apart.
      *
@@ -33,7 +44,7 @@ class StoreSurveyRequest extends FormRequest
             'job_title' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'country' => ['required', 'string', 'max:100'],
-            'website' => ['nullable', 'url', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255'],
         ];
 
         foreach ($this->questions() as $question) {
