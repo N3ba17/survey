@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BarChart3, BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { BarChart3, ClipboardCheck, Globe, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -32,14 +32,14 @@ const mainNavItems: NavItem[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
+        title: 'Supplier Survey',
+        href: '/survey',
+        icon: ClipboardCheck,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Company Website',
+        href: 'https://eec.com.et',
+        icon: Globe,
     },
 ];
 
