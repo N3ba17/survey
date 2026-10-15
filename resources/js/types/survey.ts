@@ -109,4 +109,3 @@ export type Paginator<T> = {
     to?: number;
     total: number;
 };
-

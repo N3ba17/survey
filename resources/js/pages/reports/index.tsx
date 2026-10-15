@@ -8,8 +8,6 @@ import {
     TrendingUp,
     Clock,
     ChevronRight,
-    BarChart3,
-    Layers,
     Activity,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -21,11 +19,10 @@ import {
     index as respondentsRoute,
     show as respondentRoute,
 } from '@/routes/reports/respondents';
-import type { Breakdown, SurveyResponse, SurveyTotals } from '@/types';
+import type { SurveyResponse, SurveyTotals } from '@/types';
 
 type Props = {
     totals: SurveyTotals;
-    breakdowns: Breakdown[];
     recent: SurveyResponse[];
 };
 
@@ -77,92 +74,7 @@ function StatCard({
     );
 }
 
-function BreakdownCard({ breakdown }: { breakdown: Breakdown }) {
-    const empty = breakdown.total === 0;
-    const isWide = breakdown.options.length > 6;
-
-    return (
-        <Card
-            className={`border-border/60 bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-[#00515f]/30 hover:shadow-lg ${isWide ? 'md:col-span-2' : ''}`}
-        >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/40 p-6 pb-4">
-                <div className="space-y-0.5">
-                    <CardTitle className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
-                        <span className="size-2 rounded-full bg-[#00515f]" />
-                        {breakdown.label}
-                    </CardTitle>
-                    <p className="text-xs font-medium text-muted-foreground">
-                        <span className="font-semibold text-[#00515f]">
-                            {breakdown.area}
-                        </span>
-                        {' · '}
-                        {empty
-                            ? 'No answers recorded yet'
-                            : `${breakdown.total} answered`}
-                    </p>
-                </div>
-                <span className="inline-flex items-center rounded-full bg-[#00515f]/10 px-3 py-1 text-xs font-semibold text-[#00515f] ring-1 ring-[#00515f]/20">
-                    Evidence seen
-                </span>
-            </CardHeader>
-
-            <CardContent className="grid gap-5 p-6 pt-5">
-                {empty ? (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-muted/30 px-6 py-12 text-center">
-                        <div className="mb-3 rounded-2xl bg-[#00515f]/10 p-4 text-[#00515f] ring-1 ring-[#00515f]/20">
-                            <BarChart3 className="size-6" />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground">
-                            Awaiting initial submissions
-                        </p>
-                        <p className="mt-1 max-w-[260px] text-xs leading-relaxed text-muted-foreground">
-                            Responses will automatically populate and visualize
-                            here in real-time once participants complete the
-                            survey.
-                        </p>
-                    </div>
-                ) : (
-                    breakdown.options.map((option) => (
-                        <div key={option.key} className="group/bar grid gap-2">
-                            <div className="flex items-baseline justify-between gap-3 text-sm">
-                                <span className="truncate font-semibold text-foreground/90">
-                                    {option.label}
-                                </span>
-                                <div className="flex shrink-0 items-center gap-2 text-xs">
-                                    <span className="font-bold text-foreground">
-                                        {option.count}
-                                    </span>
-                                    <span className="font-medium text-muted-foreground">
-                                        ({option.percent}%)
-                                    </span>
-                                </div>
-                            </div>
-                            <div
-                                className="h-3 w-full overflow-hidden rounded-full bg-muted/80 p-0.5 shadow-inner"
-                                role="progressbar"
-                                aria-valuenow={option.percent}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                                aria-label={option.label}
-                            >
-                                <div
-                                    className="h-full rounded-full bg-gradient-to-r from-[#00515f] to-[#000adc5] shadow-sm transition-all duration-700 ease-out group-hover/bar:brightness-110"
-                                    style={{ width: `${option.percent}%` }}
-                                />
-                            </div>
-                        </div>
-                    ))
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-export default function ReportsIndex({ totals, breakdowns, recent }: Props) {
-    const orderedBreakdowns = [...breakdowns].sort(
-        (a, b) => a.options.length - b.options.length,
-    );
-
+export default function ReportsIndex({ totals, recent }: Props) {
     return (
         <>
             <Head title="Survey Reports & Analytics" />
@@ -223,33 +135,6 @@ export default function ReportsIndex({ totals, breakdowns, recent }: Props) {
                         hint="Most recent activity"
                         icon={<Clock className="size-5" />}
                     />
-                </div>
-
-                {/* Breakdowns Section */}
-                <div className="space-y-5 pt-2">
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                            <h2 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-foreground">
-                                <Layers className="size-5 text-[#00515f]" />
-                                Response Breakdowns
-                            </h2>
-                            <p className="text-xs text-muted-foreground">
-                                Evidence-seen verdicts (Yes / No / Pending) for
-                                every supplier question
-                            </p>
-                        </div>
-                        <span className="rounded-full bg-[#00515f]/10 px-3 py-1 text-xs font-semibold text-[#00515f]">
-                            {breakdowns.length} active metrics
-                        </span>
-                    </div>
-                    <div className="grid gap-6 md:grid-cols-2">
-                        {orderedBreakdowns.map((breakdown) => (
-                            <BreakdownCard
-                                key={breakdown.key}
-                                breakdown={breakdown}
-                            />
-                        ))}
-                    </div>
                 </div>
 
                 {/* Recent Respondents Section */}

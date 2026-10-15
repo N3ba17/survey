@@ -56,9 +56,7 @@ function AnswerControl({
                                 checked={answer === option}
                                 disabled={disabled}
                                 onChange={() => onAnswer(option)}
-                                onBlur={() =>
-                                    onBlur(`answers.${question.id}`)
-                                }
+                                onBlur={() => onBlur(`answers.${question.id}`)}
                                 className="size-3.5 shrink-0 accent-[#00515f]"
                             />
                             <span className="text-sm">{option}</span>

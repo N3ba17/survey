@@ -10,7 +10,6 @@ import {
     Sparkles,
     CheckCircle2,
     Building2,
-    ShieldCheck,
     ClipboardCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,28 +17,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { index as reportsRoute } from '@/routes/reports';
 import { index as respondentsRoute } from '@/routes/reports/respondents';
 import { download as downloadRoute } from '@/routes/reports/attachments';
-import type {
-    EvidenceSeen,
-    ReportAnswer,
-    ReportSection,
-    SurveyResponse,
-} from '@/types';
+import type { ReportAnswer, ReportSection, SurveyResponse } from '@/types';
 
 type Props = {
     response: SurveyResponse;
     sections: ReportSection[];
-};
-
-const EVIDENCE_LABELS: Record<EvidenceSeen, string> = {
-    yes: 'Yes',
-    no: 'No',
-    pending: 'Pending',
-};
-
-const EVIDENCE_STYLES: Record<EvidenceSeen, string> = {
-    yes: 'bg-emerald-500/10 text-emerald-600 ring-emerald-500/30',
-    no: 'bg-destructive/10 text-destructive ring-destructive/30',
-    pending: 'bg-amber-500/10 text-amber-600 ring-amber-500/30',
 };
 
 function formatDate(value: string): string {
@@ -59,39 +41,12 @@ function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function EvidenceBadge({ value }: { value: EvidenceSeen | null }) {
-    if (!value) {
-        return (
-            <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase ring-1 ring-border">
-                Not answered
-            </span>
-        );
-    }
-
-    return (
-        <span
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase ring-1 ${EVIDENCE_STYLES[value]}`}
-        >
-            <ShieldCheck className="size-3" />
-            Evidence: {EVIDENCE_LABELS[value]}
-        </span>
-    );
-}
-
 function AnswerCard({ question }: { question: ReportAnswer }) {
     return (
         <div className="rounded-lg border border-border/50 bg-muted/30 p-2.5 transition-all hover:border-[#00515f]/30">
-            <div className="mb-1 flex items-start justify-between gap-2">
-                <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                    {question.priority && (
-                        <span className="mr-1 text-amber-500" aria-hidden>
-                            ★
-                        </span>
-                    )}
-                    {question.question}
-                </p>
-                <EvidenceBadge value={question.evidence_seen} />
-            </div>
+            <p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                {question.question}
+            </p>
 
             {question.answer ? (
                 <p className="text-xs leading-snug font-semibold whitespace-pre-wrap text-foreground">
@@ -218,11 +173,6 @@ export default function RespondentShow({ response, sections }: Props) {
                                     {response.country}
                                 </span>
                             )}
-                            {response.phone && (
-                                <span className="rounded-full bg-muted px-2.5 py-1 ring-1 ring-border">
-                                    {response.phone}
-                                </span>
-                            )}
                             {response.website && (
                                 <a
                                     href={response.website}
@@ -236,15 +186,6 @@ export default function RespondentShow({ response, sections }: Props) {
                         </div>
                     </CardContent>
                 </Card>
-
-                {response.company_info && (
-                    <div className="mb-3 shrink-0 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground">
-                        <span className="font-bold text-foreground">
-                            Company notes:{' '}
-                        </span>
-                        {response.company_info}
-                    </div>
-                )}
 
                 {/* Main Two-Column Viewport Fit Layout */}
                 <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-12">

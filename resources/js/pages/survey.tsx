@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -19,18 +19,16 @@ import {
     Ship,
     Wrench,
 } from 'lucide-react';
+import { COUNTRIES } from '@/lib/countries';
 import FieldError from '@/components/survey/field-error';
 import QuestionField from '@/components/survey/question-field';
 import { show as surveyRoute, store as surveyStore } from '@/routes/survey';
-import { login } from '@/routes';
 import { cn } from '@/lib/utils';
 import type {
-    EvidenceSeen,
     SurveyArea,
     SurveyMeta,
     SurveyQuestion,
     SurveyUploads,
-    User,
 } from '@/types';
 
 type FormState = {
@@ -38,12 +36,9 @@ type FormState = {
     contact_person: string;
     job_title: string;
     email: string;
-    phone: string;
     country: string;
     website: string;
-    company_info: string;
     answers: Record<string, string>;
-    evidence: Record<string, string>;
     attachments: Record<string, File[]>;
 };
 
@@ -51,11 +46,11 @@ type Props = {
     survey: SurveyMeta;
     areas: SurveyArea[];
     uploads: SurveyUploads;
-    auth: { user: User | null };
 };
 
 type SectionMeta = {
     icon: LucideIcon;
+    title: string;
     shortTitle: string;
     subtitle: string;
 };
@@ -63,48 +58,56 @@ type SectionMeta = {
 const SECTION_META: Record<string, SectionMeta> = {
     company: {
         icon: Building2,
+        title: 'Company Details & Profile',
         shortTitle: 'Company',
         subtitle:
             'Provide general information regarding your business entity and licensing.',
     },
     'manufacturing-capacity': {
         icon: Factory,
+        title: 'Manufacturing Capacity & Lead Times',
         shortTitle: 'Capacity',
         subtitle:
             'Detail your production capabilities, facility size, and turnaround expectations.',
     },
     'quality-control': {
         icon: ShieldCheck,
+        title: 'Quality Control (QC) Systems',
         shortTitle: 'Quality',
         subtitle:
             'Detail your quality assurance methodologies and inspection willingness.',
     },
     'certifications-standards': {
         icon: Award,
+        title: 'Certifications & International Standards',
         shortTitle: 'Certifications',
         subtitle:
             'Upload safety, management, and product specific conformity certificates.',
     },
     'project-references': {
         icon: Globe2,
-        shortTitle: 'Projects',
+        title: 'Regional Experience (Ethiopia & East Africa)',
+        shortTitle: 'Regional',
         subtitle:
             'Demonstrate track record and familiarity with East African customs and logistics.',
     },
     'after-sales-warranty': {
         icon: Wrench,
+        title: 'After-Sales Support & Warranty',
         shortTitle: 'Warranty',
         subtitle:
             'Define warranty duration, replacement policy, and technical assistance options.',
     },
     'export-logistics': {
         icon: Ship,
+        title: 'Export & Logistics (Djibouti Port)',
         shortTitle: 'Export',
         subtitle:
             'Confirm your shipping experience to Djibouti port and transit into Ethiopia.',
     },
     'commercial-terms': {
         icon: DollarSign,
+        title: 'Commercial Terms & Payment Options',
         shortTitle: 'Commercial',
         subtitle:
             'Specify minimum order quantity (MOQ) and preferred payment methods.',
@@ -113,6 +116,7 @@ const SECTION_META: Record<string, SectionMeta> = {
 
 const DEFAULT_META: SectionMeta = {
     icon: ClipboardList,
+    title: 'Section',
     shortTitle: 'Section',
     subtitle: '',
 };
@@ -127,10 +131,10 @@ const controlClasses = (hasError: boolean) =>
     );
 
 function metaFor(area: SurveyArea): SectionMeta {
-    return SECTION_META[area.slug] ?? DEFAULT_META;
+    return SECTION_META[area.slug] ?? { ...DEFAULT_META, title: area.name };
 }
 
-export default function Survey({ survey, areas, uploads, auth }: Props) {
+export default function Survey({ survey, areas, uploads }: Props) {
     const { flash } = usePage();
     const [activeStep, setActiveStep] = useState(0);
     const [touched, setTouched] = useState<Record<string, true>>({});
@@ -140,19 +144,15 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
         contact_person: '',
         job_title: '',
         email: '',
-        phone: '',
         country: '',
         website: '',
-        company_info: '',
         answers: {},
-        evidence: {},
         attachments: {},
     };
 
     for (const area of areas) {
         for (const question of area.questions) {
             initialValues.answers[question.id] = '';
-            initialValues.evidence[question.id] = '';
             initialValues.attachments[question.id] = [];
         }
     }
@@ -182,6 +182,10 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
             found.email = 'Please enter a valid email address';
         }
 
+        if (!data.country.trim()) {
+            found.country = 'Country of origin is required';
+        }
+
         if (
             data.website.trim() &&
             !/^https?:\/\/[^\s.]+\.[^\s]{2,}$/.test(data.website.trim())
@@ -196,12 +200,19 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
 
                 if (!answer) {
                     found[key] = 'An answer is required for this question';
-                }
-
-                const evidenceKey = `evidence.${question.id}`;
-
-                if (!data.evidence[question.id]) {
-                    found[evidenceKey] = 'Please select Yes, No or Pending';
+                } else if (
+                    question.answer_type === 'radio' &&
+                    !(question.answer_options ?? []).includes(answer)
+                ) {
+                    found[key] = 'Please select one of the options';
+                } else if (
+                    question.answer_type === 'number' &&
+                    (!/^\d+$/.test(answer) ||
+                        Number(answer) < 0 ||
+                        Number(answer) > 150)
+                ) {
+                    found[key] =
+                        'Please enter a whole number of years between 0 and 150';
                 }
 
                 if (
@@ -224,15 +235,11 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
     }
 
     /* ---------------------- */
-    /* Step helpers          */
+    /* Step helpers           */
     /* ---------------------- */
 
     function questionKeys(question: SurveyQuestion): string[] {
-        return [
-            `answers.${question.id}`,
-            `evidence.${question.id}`,
-            `attachments.${question.id}`,
-        ];
+        return [`answers.${question.id}`, `attachments.${question.id}`];
     }
 
     function keysForStep(index: number): string[] {
@@ -242,7 +249,13 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
 
         const respondentKeys =
             index === 0
-                ? ['company_name', 'contact_person', 'email', 'website']
+                ? [
+                      'company_name',
+                      'contact_person',
+                      'email',
+                      'country',
+                      'website',
+                  ]
                 : [];
 
         return [
@@ -252,7 +265,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
     }
 
     function stepForKey(key: string): number {
-        const match = key.match(/^(?:answers|evidence|attachments)\.(\d+)$/);
+        const match = key.match(/^(?:answers|attachments)\.(\d+)$/);
 
         if (!match) return 0;
 
@@ -340,12 +353,16 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
     /* ---------------------- */
 
     function progress(): number {
-        const required: string[] = ['company_name', 'contact_person', 'email'];
+        const required: string[] = [
+            'company_name',
+            'contact_person',
+            'email',
+            'country',
+        ];
 
         for (const area of areas) {
             for (const question of area.questions) {
                 required.push(`answers.${question.id}`);
-                required.push(`evidence.${question.id}`);
 
                 if (question.attachment_requirement === 'required') {
                     required.push(`attachments.${question.id}`);
@@ -356,10 +373,6 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
         const filled = required.filter((key) => {
             if (key.startsWith('answers.')) {
                 return (form.data.answers[key.slice(8)] ?? '').trim() !== '';
-            }
-
-            if (key.startsWith('evidence.')) {
-                return Boolean(form.data.evidence[key.slice(9)]);
             }
 
             if (key.startsWith('attachments.')) {
@@ -382,7 +395,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
         return (
             <>
                 <Head title={survey.title} />
-                <WizardShell auth={auth}>
+                <WizardShell>
                     <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl dark:border-slate-700 dark:bg-slate-800">
                         <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#00515f]/10 text-[#00515f]">
                             <CheckCircle2 className="size-10" />
@@ -398,7 +411,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                 onClick={() => router.visit(surveyRoute.url())}
                                 className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200"
                             >
-                                Submit another response
+                                Back to Form
                             </button>
                             <button
                                 onClick={() => window.print()}
@@ -419,7 +432,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
         return (
             <>
                 <Head title={survey.title} />
-                <WizardShell auth={auth}>
+                <WizardShell>
                     <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
                         No questions are configured for this survey yet.
                     </div>
@@ -438,11 +451,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
         <>
             <Head title={survey.title} />
 
-            <WizardShell auth={auth}>
-                <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
-                    {survey.description}
-                </p>
-
+            <WizardShell>
                 {/* Progress */}
                 <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="mb-2 flex items-center justify-between">
@@ -525,7 +534,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                         <div className="border-b border-slate-200 pb-4 dark:border-slate-700">
                             <h2 className="flex items-center gap-2 text-xl font-bold text-slate-800 dark:text-slate-100">
                                 <ActiveIcon className="size-5 text-[#00515f]" />
-                                {activeArea.name}
+                                {activeMeta.title}
                             </h2>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
                                 {activeMeta.subtitle}
@@ -547,10 +556,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                     error={visibleError('company_name')}
                                     disabled={form.processing}
                                 />
-                                <TextField
-                                    id="country"
-                                    label="Country / Region of Origin"
-                                    placeholder="e.g. China, Turkey, India, Vietnam"
+                                <CountrySelect
                                     value={form.data.country}
                                     onChange={(value) =>
                                         form.setData('country', value)
@@ -601,20 +607,6 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                     disabled={form.processing}
                                 />
                                 <TextField
-                                    id="phone"
-                                    label="Phone"
-                                    type="tel"
-                                    placeholder="+971 4 000 0000"
-                                    autoComplete="tel"
-                                    value={form.data.phone}
-                                    onChange={(value) =>
-                                        form.setData('phone', value)
-                                    }
-                                    onBlur={() => touch(['phone'])}
-                                    error={visibleError('phone')}
-                                    disabled={form.processing}
-                                />
-                                <TextField
                                     id="website"
                                     label="Company Website"
                                     placeholder="https://example.com"
@@ -626,35 +618,6 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                     error={visibleError('website')}
                                     disabled={form.processing}
                                 />
-                                <div className="md:col-span-2">
-                                    <label
-                                        htmlFor="company_info"
-                                        className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                                    >
-                                        Anything else we should know?
-                                    </label>
-                                    <textarea
-                                        id="company_info"
-                                        rows={3}
-                                        placeholder="Product range, factory locations, other notes…"
-                                        value={form.data.company_info}
-                                        disabled={form.processing}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'company_info',
-                                                event.target.value,
-                                            )
-                                        }
-                                        className={controlClasses(
-                                            Boolean(
-                                                visibleError('company_info'),
-                                            ),
-                                        )}
-                                    />
-                                    <FieldError
-                                        message={visibleError('company_info')}
-                                    />
-                                </div>
                             </div>
                         )}
 
@@ -667,14 +630,10 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                     number={questionOffset + index + 1}
                                     question={question}
                                     answer={form.data.answers[key] ?? ''}
-                                    evidence={form.data.evidence[key] ?? ''}
                                     files={form.data.attachments[key] ?? []}
                                     uploads={uploads}
                                     answerError={visibleError(
                                         `answers.${question.id}`,
-                                    )}
-                                    evidenceError={visibleError(
-                                        `evidence.${question.id}`,
                                     )}
                                     filesError={visibleError(
                                         `attachments.${question.id}`,
@@ -682,12 +641,6 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                     onAnswer={(value) =>
                                         form.setData('answers', {
                                             ...form.data.answers,
-                                            [question.id]: value,
-                                        })
-                                    }
-                                    onEvidence={(value: EvidenceSeen) =>
-                                        form.setData('evidence', {
-                                            ...form.data.evidence,
                                             [question.id]: value,
                                         })
                                     }
@@ -709,7 +662,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                         <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             Step {activeStep + 1} of {areas.length}:{' '}
                             <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                {activeArea.name}
+                                {activeMeta.title}
                             </span>
                         </div>
 
@@ -725,8 +678,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                         : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800',
                                 )}
                             >
-                                <ChevronLeft className="size-4" /> Previous
-                                Section
+                                <ChevronLeft className="size-4" /> Previous Tab
                             </button>
 
                             {activeStep < areas.length - 1 ? (
@@ -735,8 +687,7 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                                     onClick={handleNext}
                                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#00515f] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#00515f]/20 transition-colors hover:bg-[#00515f]/90 sm:flex-none"
                                 >
-                                    Next Section{' '}
-                                    <ChevronRight className="size-4" />
+                                    Next Tab <ChevronRight className="size-4" />
                                 </button>
                             ) : (
                                 <button
@@ -771,11 +722,6 @@ export default function Survey({ survey, areas, uploads, auth }: Props) {
                             </p>
                         </div>
                     )}
-
-                    <p className="mt-3 text-center text-xs text-slate-400">
-                        By submitting you agree that we may store your response
-                        and any attached files. Your answers are confidential.
-                    </p>
                 </form>
             </WizardShell>
         </>
@@ -839,13 +785,57 @@ function TextField({
     );
 }
 
-function WizardShell({
-    auth,
-    children,
+function CountrySelect({
+    value,
+    onChange,
+    onBlur,
+    error,
+    disabled = false,
 }: {
-    auth: { user: User | null };
-    children: ReactNode;
+    value: string;
+    onChange: (value: string) => void;
+    onBlur?: () => void;
+    error?: string;
+    disabled?: boolean;
 }) {
+    return (
+        <div>
+            <label
+                htmlFor="country"
+                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+                Country / Region of Origin{' '}
+                <span className="text-red-500" aria-hidden>
+                    *
+                </span>
+            </label>
+            <select
+                id="country"
+                name="country"
+                value={value}
+                required
+                disabled={disabled}
+                onChange={(event) => onChange(event.target.value)}
+                onBlur={onBlur}
+                className={cn(
+                    controlClasses(Boolean(error)),
+                    'appearance-auto',
+                )}
+                aria-invalid={error ? true : undefined}
+            >
+                <option value="">Select a country…</option>
+                {COUNTRIES.map((country) => (
+                    <option key={country} value={country}>
+                        {country}
+                    </option>
+                ))}
+            </select>
+            <FieldError message={error} />
+        </div>
+    );
+}
+
+function WizardShell({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-dvh bg-slate-50 pb-12 font-sans text-slate-800 dark:bg-slate-950 dark:text-slate-100">
             <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900 text-white shadow-md">
@@ -862,26 +852,6 @@ function WizardShell({
                                 Vendor Verification & Compliance
                             </p>
                         </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-sm">
-                        {auth.user ? (
-                            <Link
-                                href="/dashboard"
-                                prefetch
-                                className="text-sm text-slate-300 underline-offset-4 hover:text-white hover:underline"
-                            >
-                                Dashboard
-                            </Link>
-                        ) : (
-                            <Link
-                                href={login.url()}
-                                prefetch
-                                className="text-sm text-slate-300 underline-offset-4 hover:text-white hover:underline"
-                            >
-                                Log in
-                            </Link>
-                        )}
                     </div>
                 </div>
             </header>
