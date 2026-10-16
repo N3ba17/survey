@@ -1,4 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     ArrowLeft,
     Download,
@@ -11,11 +12,15 @@ import {
     CheckCircle2,
     Building2,
     ClipboardCheck,
+    Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { index as reportsRoute } from '@/routes/reports';
-import { index as respondentsRoute } from '@/routes/reports/respondents';
+import {
+    index as respondentsRoute,
+    destroy as destroyRespondentRoute,
+} from '@/routes/reports/respondents';
 import { download as downloadRoute } from '@/routes/reports/attachments';
 import type {
     Readiness,
@@ -107,6 +112,26 @@ export default function RespondentShow({
         (total, section) => total + section.questions.length,
         0,
     );
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = () => {
+        const confirmed = window.confirm(
+            `Delete ${response.company_name}'s submission permanently? ` +
+                'All answers, documents and uploaded files will be removed.',
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setDeleting(true);
+        router.delete(
+            destroyRespondentRoute.url({ response: response.id }),
+            {
+                onFinish: () => setDeleting(false),
+            },
+        );
+    };
 
     return (
         <>
@@ -115,17 +140,30 @@ export default function RespondentShow({
             <div className="mx-auto flex h-full w-full max-w-7xl flex-1 flex-col overflow-hidden p-3 sm:p-4">
                 {/* Top Navigation & Header Bar */}
                 <div className="flex shrink-0 items-center justify-between pb-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="h-8 rounded-lg border-border/80 px-3 text-xs font-medium hover:border-[#00515f]/30 hover:bg-[#00515f]/10 hover:text-[#00515f]"
-                    >
-                        <Link href={respondentsRoute.url()}>
-                            <ArrowLeft className="mr-1 size-3.5" />
-                            Back
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="h-8 rounded-lg border-border/80 px-3 text-xs font-medium hover:border-[#00515f]/30 hover:bg-[#00515f]/10 hover:text-[#00515f]"
+                        >
+                            <Link href={respondentsRoute.url()}>
+                                <ArrowLeft className="mr-1 size-3.5" />
+                                Back
+                            </Link>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={deleting}
+                            onClick={handleDelete}
+                            className="h-8 rounded-lg border-red-500/30 px-3 text-xs font-medium text-red-600 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-600 disabled:opacity-60"
+                        >
+                            <Trash2 className="mr-1 size-3.5" />
+                            {deleting ? 'Deleting…' : 'Delete'}
+                        </Button>
+                    </div>
 
                     <div className="flex items-center gap-2">
                         <span className="hidden items-center gap-1.5 rounded-full bg-[#00515f]/10 px-3 py-1 text-[11px] font-semibold text-[#00515f] ring-1 ring-[#00515f]/20 sm:inline-flex">

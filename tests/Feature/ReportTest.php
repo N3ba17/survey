@@ -23,6 +23,9 @@ test('guests are redirected to the login page', function () {
 
     $this->get(route('reports.respondents.show', $response))
         ->assertRedirect(route('login'));
+
+    $this->delete(route('reports.respondents.destroy', $response))
+        ->assertRedirect(route('login'));
 });
 
 test('the overview shows totals and recent respondents', function () {
@@ -141,5 +144,31 @@ test('a missing attachment returns a 404', function () {
 
     $this->actingAs(User::factory()->create())
         ->get(route('reports.attachments.download', $attachment))
+        ->assertNotFound();
+});
+
+test('a submission can be deleted with its answers, documents and files', function () {
+    Storage::fake('local');
+
+    $response = SurveyResponse::factory()->create();
+    $answer = $response->answers()->firstOrFail();
+    $attachment = SurveyAttachment::factory()
+        ->for($response, 'response')
+        ->create(['path' => 'surveys/to-delete.pdf']);
+    Storage::disk('local')->put('surveys/to-delete.pdf', 'file contents');
+
+    $this->actingAs(User::factory()->create())
+        ->delete(route('reports.respondents.destroy', $response))
+        ->assertRedirect(route('reports.respondents.index'));
+
+    $this->assertDatabaseMissing('survey_responses', ['id' => $response->id]);
+    $this->assertDatabaseMissing('survey_answers', ['id' => $answer->id]);
+    $this->assertDatabaseMissing('survey_attachments', ['id' => $attachment->id]);
+    Storage::disk('local')->assertMissing('surveys/to-delete.pdf');
+});
+
+test('deleting a missing submission returns a 404', function () {
+    $this->actingAs(User::factory()->create())
+        ->delete(route('reports.respondents.destroy', 999999))
         ->assertNotFound();
 });

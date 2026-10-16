@@ -8,6 +8,7 @@ use App\Models\SurveyAttachment;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Support\Readiness;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -103,6 +104,23 @@ class ReportController extends Controller
         abort_unless($disk->exists($attachment->path), 404);
 
         return $disk->download($attachment->path, $attachment->original_name);
+    }
+
+    /**
+     * Delete a submission with its answers, documents and stored files.
+     */
+    public function destroy(SurveyResponse $response): RedirectResponse
+    {
+        $uploads = config('survey.uploads');
+        $disk = Storage::disk(is_array($uploads) ? $uploads['disk'] : 'local');
+
+        foreach ($response->attachments as $attachment) {
+            $disk->delete($attachment->path);
+        }
+
+        $response->delete();
+
+        return redirect()->route('reports.respondents.index');
     }
 
     /**

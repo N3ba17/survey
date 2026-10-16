@@ -20,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('reports.respondents.index');
     Route::get('reports/respondents/{response}', [ReportController::class, 'show'])
         ->name('reports.respondents.show');
+    Route::delete('reports/respondents/{response}', [ReportController::class, 'destroy'])
+        ->name('reports.respondents.destroy');
     Route::get('reports/attachments/{attachment}', [ReportController::class, 'download'])
         ->name('reports.attachments.download');
 });
