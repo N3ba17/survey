@@ -105,8 +105,7 @@ const TABS: TabDefinition[] = [
 ];
 
 export default function Survey({ survey, areas, uploads }: Props) {
-    const page = usePage();
-    const flash = ((page.props as unknown as { flash?: { submitted?: boolean } }).flash ?? {}) as { submitted?: boolean };
+    const { flash } = usePage();
     const [activeStep, setActiveStep] = useState(0);
     const [touched, setTouched] = useState<Record<string, true>>({});
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -532,19 +531,12 @@ export default function Survey({ survey, areas, uploads }: Props) {
                         </div>
 
                         <div className="flex flex-col gap-3 pt-2">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-                                <button
-                                    type="button"
-                                    onClick={() => window.print()}
-                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#005577] to-[#00ADC5] px-6 text-sm font-semibold text-white shadow-md shadow-[#00ADC5]/25 transition-all hover:opacity-95 active:scale-[0.98]"
-                                >
-                                    Print Response
-                                </button>
+                            <div className="flex justify-center">
                                 <a
-                                    href="https://eec.com.et"
+                                    href="https://eec.milkotech.et/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-[#005577] active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-[#00ADC5]"
+                                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-[#005577] active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-[#00ADC5]"
                                 >
                                     <Globe2 className="size-4" />
                                     <span>Visit Company Website</span>
